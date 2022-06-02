@@ -1,60 +1,110 @@
 import os
 import sys
-import math
 import speedtest
+import socket
 
-def BytesToMbps(size_bytes):
-    l = int(math.log(size_bytes, 1024))
-    fl = math.floor(l)
-    i = int(fl)
-    power = math.pow(1024, i)
-    size = round(size_bytes / power, 2)
-    return f'{size} Mbps'
+class NetTrend:
+  def __init__(self):
+    pass
   
-def Informations(net):
-    print('Download speed-rate: ' + (str(BytesToMbps(net.download))))
-    print('Upload speed-rate: ' + (str(BytesToMbps(net.upload))))
-    #print('Current Address: ' + net.)
-
+  def Define(self, id, download, upload, ip, ping):
+    self.id = id
+    self.download = download
+    self.upload = upload
+    self.ip = ip
+    self.ping = ping
+    
+def SingleTest(net):
+    value = NetTrend()
+    download = net.download()
+    upload = net.upload()
+    net.get_best_server()
+    hostname = socket.gethostname()
+    download_mbps = round(download / (10**7), 2)
+    upload_mbps = round(upload / (10**7), 2)
+    ip_address = socket.gethostbyname(hostname)
+    ping = net.results.ping
+    value.Define(len(Tests), download_mbps, upload_mbps, ip_address, ping)
+    print('Download speed-rate: ' + str(download_mbps) + ' Mbps')
+    print('Upload speed-rate: ' + str(upload_mbps) + ' Mbps')
+    print('This Hostname: ' + str(hostname))
+    print('Current address: ' + str(ip_address))
+    print('Ping result: ' + str(ping))
+    return value
+  
 def RefreshProgram():
     python = sys.executable
     os.execl(python, python, * sys.argv)
 
-# Pings Array
-servernames = []
+print('##############################')
+print('# Speedtester by Daniel Rota #')
+print('##############################')
 
-# This Network
-net = speedtest.Speedtest()
+Tests = []
 
-choise = int(input('''
+def Main():
+  if speedtest.Speedtest():
+    net = speedtest.Speedtest()
+  else:
+    sys.exit('Internet is actually unavaible...')
 
-#1 Get data about local network
-#2 Make a ping to server
-
+  choise = int(input('''
+1) Make a test and ping to server
+2) View trend of recent tests
+3) Average of download-speed and upload-speed
+                     
 '''))
-
-if choise == 1:
+    
+  if choise == 1:
+    value = NetTrend()
     print('')
     print('Performing connection...')
+    print('')        
+    value = SingleTest(net)
+    Tests.append(value)
+  elif choise == 2:
     print('')
-    Informations(net)
+    for i in Tests:
+      print('N°', i.id, ':', i.download, 'Mbps -', i.upload, 'Mbps -', i.ip, '-' , i.ping)
+      print('')
+    print('Do you want to restart this program? [y/n]')
+    answer = str(input())
+    if answer.lower().strip() == 'y':
+      print('')
+      print('--------------------------------------------------')
+      Main()
+    else:
+      print('')
+      sys.exit('Exiting program...')
+  elif choise == 3:
+    if len(Tests) == 0:
+      print('')
+      print('Actually any value has been registered... make some tests first!')
+      print('')
+    else:
+      sd = 0
+      su = 0
+      for a in Tests:
+        sd = sd + float(a.download)
+        su = su + float(a.upload)
+      print('')
+      print('Average download-speed:', sd / len(Tests)) 
+      print('Average upload-speed:', su / len(Tests)) 
+  else:
+    print('Make another choise please! Restarting program...')
+    Main()
 
-elif choise == 2:
-    print('Pinging to server...')
-    net.get_servers(servernames)
-    print(str(net.results.ping))
-    print(net.best.values())
+Main()
+GoOn = True
 
-else:
-    print('Make another choise please...')
-    print("Program is getting refreshed")
-    RefreshProgram()
-
-answer = str('Do you want to restart this program? [ y / n ]')
-
-if answer.lower().strip() == 'y':
-    RefreshProgram()
-  
-else:
+while(GoOn):
+  print('')
+  print('Do you want to restart this program? [y/n]')
+  answer = str(input())
+  if answer.lower().strip() == 'y':
+    print('')
+    print('--------------------------------------------------')
+    Main()  
+  else:
     print('')
     sys.exit('Exiting program...')
